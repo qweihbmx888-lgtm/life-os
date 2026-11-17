@@ -1,0 +1,174 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#10111c">
+<title>LIFE OS - Your Life, Handled</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#10111c;color:#fff;
+ font-family:Arial,sans-serif;min-height:100vh;
+}
+header{
+ padding:24px 20px;display:flex;
+ justify-content:space-between;align-items:center;
+}
+.logo{font-size:25px;font-weight:bold;letter-spacing:2px}
+.logo span{color:#9275ff}
+main{max-width:520px;margin:auto;padding:20px}
+h1{text-align:center;font-size:27px;margin-top:35px}
+.subtitle{text-align:center;color:#a5a6b7;margin-bottom:30px}
+.voice{
+ width:112px;height:112px;border-radius:50%;
+ border:0;background:linear-gradient(135deg,#a58aff,#6240d9);
+ color:white;font-size:40px;display:block;margin:25px auto;
+ box-shadow:0 0 45px #7553d966;cursor:pointer;
+}
+.voice:active{transform:scale(.95)}
+.hint{text-align:center;color:#aaa;font-size:13px}
+.inputbox{
+ display:flex;gap:8px;margin:25px 0;
+}
+input{
+ flex:1;min-width:0;padding:15px;border-radius:13px;
+ background:#202235;border:1px solid #393b55;
+ color:white;font-size:15px;outline:none;
+}
+button.add{
+ border:0;border-radius:13px;background:#7959e8;
+ color:white;padding:0 18px;font-size:20px;
+}
+.card{
+ background:#1c1e2e;border:1px solid #303247;
+ padding:18px;border-radius:18px;margin:15px 0;
+}
+.card h3{margin:0 0 15px;font-size:17px}
+.item{
+ padding:12px 0;border-bottom:1px solid #33364a;
+ display:flex;justify-content:space-between;gap:10px;
+ color:#e2e2ed;font-size:14px;
+}
+.item:last-child{border:0}
+.delete{color:#ff8291;background:none;border:0}
+footer{text-align:center;color:#73758a;padding:30px;font-size:12px}
+</style>
+</head>
+<body>
+
+<header>
+ <div class="logo">LIFE <span>OS</span></div>
+ <div>✦ AI</div>
+</header>
+
+<main>
+ <h1>كيف أساعدك اليوم؟</h1>
+ <p class="subtitle">حياتك أصبحت أسهل، فقط أخبرني بما تريد.</p>
+
+ <button class="voice" onclick="startVoice()">🎙</button>
+ <p class="hint" id="hint">اضغط على الميكروفون أو اكتب طلبك</p>
+
+ <div class="inputbox">
+  <input id="taskInput" placeholder="مثلاً: ذكرني بشراء الحليب...">
+  <button class="add" onclick="addTask()">+</button>
+ </div>
+
+ <section class="card">
+  <h3>✦ مهامي القادمة</h3>
+  <div id="tasks">
+   <div class="item">مرحباً بك في LIFE OS 👋</div>
+  </div>
+ </section>
+
+ <section class="card">
+  <h3>📝 ملاحظاتي</h3>
+  <div class="inputbox">
+   <input id="noteInput" placeholder="اكتب فكرة تريد حفظها...">
+   <button class="add" onclick="addNote()">+</button>
+  </div>
+  <div id="notes"></div>
+ </section>
+</main>
+
+<footer> LIFE OS © 2026 · Your Life, Handled.</footer>
+
+<script>
+let tasks=JSON.parse(localStorage.getItem("lifeTasks")||"[]");
+let notes=JSON.parse(localStorage.getItem("lifeNotes")||"[]");
+
+function render(){
+ document.getElementById("tasks").innerHTML=
+ tasks.map((t,i)=>`<div class="item">
+ <span>${escapeHTML(t)}</span>
+ <button class="delete" onclick="removeTask(${i})">حذف</button>
+ </div>`).join("")||"لا توجد مهام حالياً";
+
+ document.getElementById("notes").innerHTML=
+ notes.map((n,i)=>`<div class="item">
+ <span>${escapeHTML(n)}</span>
+ <button class="delete" onclick="removeNote(${i})">حذف</button>
+ </div>`).join("")||"لا توجد ملاحظات بعد";
+}
+
+function escapeHTML(s){
+ return String(s).replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",
+ '"':"&quot;","'":"&#39;"
+ }[c]));
+}
+
+function addTask(){
+ let v=document.getElementById("taskInput").value.trim();
+ if(!v)return;
+ tasks.push(v);
+ localStorage.setItem("lifeTasks",JSON.stringify(tasks));
+ document.getElementById("taskInput").value="";
+ render();
+}
+
+function addNote(){
+ let v=document.getElementById("noteInput").value.trim();
+ if(!v)return;
+ notes.push(v);
+ localStorage.setItem("lifeNotes",JSON.stringify(notes));
+ document.getElementById("noteInput").value="";
+ render();
+}
+
+function removeTask(i){
+ tasks.splice(i,1);
+ localStorage.setItem("lifeTasks",JSON.stringify(tasks));
+ render();
+}
+
+function removeNote(i){
+ notes.splice(i,1);
+ localStorage.setItem("lifeNotes",JSON.stringify(notes));
+ render();
+}
+
+function startVoice(){
+ const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!Speech){
+  document.getElementById("hint").textContent=
+  "التعرف الصوتي غير مدعوم في هذا المتصفح حالياً";
+  return;
+ }
+ const rec=new Speech();
+ rec.lang="ar-SA";
+ rec.onstart=()=>document.getElementById("hint").textContent="أستمع إليك الآن...";
+ rec.onresult=e=>{
+  document.getElementById("taskInput").value=
+  e.results[0][0].transcript;
+  document.getElementById("hint").textContent="تم تحويل كلامك إلى نص. أضفه إلى مهامك.";
+ };
+ rec.onerror=()=>document.getElementById("hint").textContent="تعذر استخدام الميكروفون.";
+ rec.onend=()=>{};
+ rec.start();
+}
+render();
+</script>
+</body>
+</html>
